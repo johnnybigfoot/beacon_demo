@@ -2,6 +2,7 @@ package integration;
 
 import api.BeaconRetriever;
 import model.BeaconResp;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
 import java.util.Map;
@@ -19,10 +20,32 @@ public class BeaconTest {
     }
 
     @Test
-    public void validateAnalyzer() {
+    public void validateAnalyzerSanity() {
         Optional<BeaconResp> lastValue = Optional.empty();
         Map<String, Integer> analyzedOutput = retriever.analyzeOutputValue(lastValue);
         assertNull("Method should process empty value correctly", analyzedOutput);
+    }
+
+    @Test
+    public void validateAnalyzerCalculation() {
+        Optional<BeaconResp> lastValue = retriever.getLastValue();
+        Map<String, Integer> analyzedValue = retriever.analyzeOutputValue(lastValue);
+        for (String key : analyzedValue.keySet()) {
+            int calculatedAmount = analyzedValue.get(key);
+            int recalculatedAmount = StringUtils.countMatches(lastValue.get().getOutputValue(), key);
+            assertEquals("Wrong calculation of number of occurrences", recalculatedAmount, calculatedAmount);
+        }
+    }
+
+    @Test
+    public void validateAnalyzerEntries() {
+        Optional<BeaconResp> lastValue = retriever.getLastValue();
+        Map<String, Integer> analyzedValue = retriever.analyzeOutputValue(lastValue);
+        String outputValue = lastValue.get().getOutputValue();
+        for (int i = 0; i < outputValue.length(); i++) {
+            String symbol = outputValue.substring(i, i + 1);
+            assertTrue("Symbol is absent from result set: " + symbol, analyzedValue.keySet().contains(symbol));
+        }
     }
 
     @Test
